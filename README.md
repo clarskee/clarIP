@@ -5,17 +5,20 @@ Userscript overlay for `ome.tv`, plus the notification component and the
 
 ## Layout
 
-- `scriptloader.js` — installable userscript loader; fetches the current
-  `script.js`, `notif.js`, `index.html`, `style.css` and `notification.html`
-  from `main` on GitHub each time it runs
+- `scriptloader.js` — installable userscript loader; resolves the latest commit
+  SHA for `main` and fetches the matching `script.js`, `notif.js`, `index.html`,
+  `style.css` and `notification.html` each time it runs
 - `notif.js` — notification component (`addNotification(title, content, x, y, decay)`)
 - `script.js` — overlay injection, dragging, chat theme and UI wiring
 - `index.html`, `notification.html`, `style.css` — overlay and notification sources
 - `python_info_server/` — unchanged Python service
 
-The loader always pulls the latest reviewed sources from
-`https://raw.githubusercontent.com/clarskee/clarIP/main/`. If a non-essential asset
-fails, the overlay falls back to its built-in markup and logs a caught warning.
+The loader resolves the current `main` commit through the GitHub API (cached for
+60 seconds per browser), then pulls files from that commit SHA. This avoids the
+`raw.githubusercontent.com` CDN serving a stale `main` for several minutes; a
+query-string cache-buster alone does not bypass that cache. If the API call
+fails, the loader falls back to `main`. If a non-essential asset fails, the
+overlay falls back to its built-in markup and logs a caught warning.
 
 ## Install
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         clarIP
 // @namespace    https://github.com/clarskee/clarIP
-// @version      0.67
+// @version      0.68
 // @description  ome.tv overlay with notifications
 // @author       clara
 // @match        https://ome.tv/*
@@ -21,7 +21,51 @@
     }
     window.__clarIPLoaderStarted = true;
 
-    const baseURL = "https://raw.githubusercontent.com/clarskee/clarIP/main/";
+    const repo = "clarskee/clarIP";
+    const fallbackBaseURL = "https://raw.githubusercontent.com/" + repo + "/main/";
+    const commitAPI = "https://api.github.com/repos/" + repo + "/commits/main";
+    const shaCacheKey = "clarIPLatestCommit";
+    const shaCacheTTL = 60 * 1000;
+    let baseURL = fallbackBaseURL;
+
+    const resolveBaseURL = async () => {
+        let cachedSHA = null;
+        try {
+            const cached = JSON.parse(localStorage.getItem(shaCacheKey) || "null");
+            if (cached && cached.sha && Date.now() - cached.time < shaCacheTTL) {
+                cachedSHA = cached.sha;
+            }
+        } catch (error) {
+            console.warn("clarIP: could not read the commit cache", error);
+        }
+
+        if (cachedSHA) {
+            return "https://raw.githubusercontent.com/" + repo + "/" + cachedSHA + "/";
+        }
+
+        try {
+            const response = await fetch(commitAPI, {
+                cache: "no-store",
+                headers: { Accept: "application/vnd.github.sha" },
+            });
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status + " for " + commitAPI);
+            }
+            const sha = (await response.text()).trim();
+            if (/^[0-9a-f]{40}$/i.test(sha)) {
+                try {
+                    localStorage.setItem(shaCacheKey, JSON.stringify({ sha, time: Date.now() }));
+                } catch (error) {
+                    console.warn("clarIP: could not cache the commit sha", error);
+                }
+                return "https://raw.githubusercontent.com/" + repo + "/" + sha + "/";
+            }
+            throw new Error("Unexpected commit response");
+        } catch (error) {
+            console.warn("clarIP: could not resolve the latest commit; using main", error);
+            return fallbackBaseURL;
+        }
+    };
 
     const fetchText = async (file, required) => {
         const url = baseURL + file + "?t=" + Date.now();
@@ -41,6 +85,8 @@
     };
 
     const run = async () => {
+        baseURL = await resolveBaseURL();
+
         let scriptSource;
         try {
             scriptSource = await fetchText("script.js", true);

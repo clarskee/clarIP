@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    const CLARIP_SCRIPT_VERSION = "0.67";
+    const CLARIP_SCRIPT_VERSION = "0.68";
 
     // Versioned guard: an older bundled copy of clarIP may already be running.
     // Let this version repair its hooks instead of silently returning early.
@@ -349,7 +349,7 @@
         initChatTheme();
 
         try {
-            addNotification("clarIP", "version: v0.67", 10, 0, 5000);
+            addNotification("clarIP", "version: v0.68", 10, 0, 5000);
         } catch (error) {
             console.warn("clarIP: notification system has not been loaded.", error);
         }
