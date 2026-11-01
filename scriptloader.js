@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         clarIP
-// @namespace    https://github.com/yuig/clarIP
-// @version      0.66
+// @namespace    https://github.com/clarskee/clarIP
+// @version      0.67
 // @description  ome.tv overlay with notifications
 // @author       clara
 // @match        https://ome.tv/*
 // @match        https://www.ome.tv/*
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?domain=ome.tv
-// @updateURL    https://raw.githubusercontent.com/yuig/clarIP/main/scriptloader.js
-// @downloadURL  https://raw.githubusercontent.com/yuig/clarIP/main/scriptloader.js
+// @updateURL    https://raw.githubusercontent.com/clarskee/clarIP/main/scriptloader.js
+// @downloadURL  https://raw.githubusercontent.com/clarskee/clarIP/main/scriptloader.js
 // @grant        none
 // ==/UserScript==
 
@@ -21,7 +21,7 @@
     }
     window.__clarIPLoaderStarted = true;
 
-    const baseURL = "https://raw.githubusercontent.com/yuig/clarIP/main/";
+    const baseURL = "https://raw.githubusercontent.com/clarskee/clarIP/main/";
 
     const fetchText = async (file, required) => {
         const url = baseURL + file + "?t=" + Date.now();

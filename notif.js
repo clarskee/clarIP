@@ -16,7 +16,7 @@
 
     const assets = window.__clarIPAssets || {};
     const notificationTemplate = assets.notificationTemplate || FALLBACK_TEMPLATE;
-    const notificationSound = new Audio("https://github.com/yuig/clarIP/raw/main/notification-pretty-good.mp3");
+    const notificationSound = new Audio("https://github.com/clarskee/clarIP/raw/main/notification-pretty-good.mp3");
     notificationSound.preload = "none";
 
     const notifications = [];

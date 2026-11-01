@@ -14,8 +14,19 @@ Userscript overlay for `ome.tv`, plus the notification component and the
 - `python_info_server/` — unchanged Python service
 
 The loader always pulls the latest reviewed sources from
-`https://raw.githubusercontent.com/yuig/clarIP/main/`. If a non-essential asset
+`https://raw.githubusercontent.com/clarskee/clarIP/main/`. If a non-essential asset
 fails, the overlay falls back to its built-in markup and logs a caught warning.
+
+## Install
+
+Install only the loader:
+
+```
+https://raw.githubusercontent.com/clarskee/clarIP/main/scriptloader.js
+```
+
+If an older bundled `clarIP.user.js` is still installed, remove it and keep only
+the loader so updates from `main` are used.
 
 ## Checks
 

@@ -1,17 +1,21 @@
 (function () {
     "use strict";
 
-    if (window.__clarIPInitialized) {
+    const CLARIP_SCRIPT_VERSION = "0.67";
+
+    // Versioned guard: an older bundled copy of clarIP may already be running.
+    // Let this version repair its hooks instead of silently returning early.
+    if (window.__clarIPVersion === CLARIP_SCRIPT_VERSION) {
         return;
     }
-    window.__clarIPInitialized = true;
+    window.__clarIPVersion = CLARIP_SCRIPT_VERSION;
 
     const head = document.head || document.getElementsByTagName("head")[0];
     const body = document.body;
     const assets = window.__clarIPAssets || {};
 
-    const windowURL = "https://raw.githubusercontent.com/yuig/clarIP/main/index.html?es=" + Math.floor(Math.random() * 16777215).toString(16);
-    const styleURL = "https://raw.githubusercontent.com/yuig/clarIP/main/style.css?es=" + Math.floor(Math.random() * 16777215).toString(16);
+    const windowURL = "https://raw.githubusercontent.com/clarskee/clarIP/main/index.html?es=" + Math.floor(Math.random() * 16777215).toString(16);
+    const styleURL = "https://raw.githubusercontent.com/clarskee/clarIP/main/style.css?es=" + Math.floor(Math.random() * 16777215).toString(16);
     const fontAwesomeURL = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css";
 
     // Used only if neither the packaged asset nor the remote fallback is available.
@@ -210,33 +214,50 @@
 
     const installPeerConnectionHook = () => {
         const NativeRTCPeerConnection = window.oRTCPeerConnection || window.RTCPeerConnection;
-        if (typeof NativeRTCPeerConnection !== "function") {
+        if (typeof NativeRTCPeerConnection !== "function" || !NativeRTCPeerConnection.prototype) {
             return;
         }
         window.oRTCPeerConnection = NativeRTCPeerConnection;
 
-        // A Proxy keeps the native constructor's prototype and static members
-        // visible to the host page. A plain wrapper function breaks feature
-        // detection such as RTCPeerConnection.prototype.addIceCandidate.toString().
-        window.RTCPeerConnection = new Proxy(NativeRTCPeerConnection, {
-            construct(target, args) {
-                const pc = Reflect.construct(target, args);
-                const originalAddIceCandidate = pc.addIceCandidate;
+        // If an older clarIP build replaced the constructor with a plain
+        // function, restore the native constructor first. Its prototype is what
+        // the host page feature-detects.
+        const currentPrototype = window.RTCPeerConnection && window.RTCPeerConnection.prototype;
+        if (
+            (!currentPrototype || typeof currentPrototype.addIceCandidate !== "function") &&
+            typeof NativeRTCPeerConnection.prototype.addIceCandidate === "function"
+        ) {
+            window.RTCPeerConnection = NativeRTCPeerConnection;
+        }
 
-                pc.oaddIceCandidate = originalAddIceCandidate;
-                pc.addIceCandidate = function (iceCandidate, ...rest) {
-                    if (iceCandidate && typeof iceCandidate.candidate === "string") {
-                        const fields = iceCandidate.candidate.split(" ");
-                        const ip = fields[4];
-                        const port = fields[5];
-                        if (fields[7] === "srflx") {
-                            getLocation(ip, port);
-                        }
+        const prototype = NativeRTCPeerConnection.prototype;
+        if (typeof prototype.addIceCandidate !== "function" || prototype.addIceCandidate.__clarIPPatched) {
+            return;
+        }
+
+        // Patch the prototype instead of wrapping the constructor. The Proxy
+        // keeps Function.prototype.toString() looking native, so ome.tv's
+        // RTCPeerConnection.prototype.addIceCandidate.toString() check passes.
+        const originalAddIceCandidate = prototype.addIceCandidate;
+        const patchedAddIceCandidate = new Proxy(originalAddIceCandidate, {
+            apply(target, thisArg, args) {
+                const iceCandidate = args[0];
+                if (iceCandidate && typeof iceCandidate.candidate === "string") {
+                    const fields = iceCandidate.candidate.split(" ");
+                    if (fields[7] === "srflx") {
+                        getLocation(fields[4], fields[5]);
                     }
-                    return originalAddIceCandidate.call(this, iceCandidate, ...rest);
-                };
-                return pc;
+                }
+                return Reflect.apply(target, thisArg, args);
             },
+        });
+        patchedAddIceCandidate.__clarIPPatched = true;
+
+        Object.defineProperty(prototype, "addIceCandidate", {
+            value: patchedAddIceCandidate,
+            writable: true,
+            configurable: true,
+            enumerable: false,
         });
     };
 
@@ -328,7 +349,7 @@
         initChatTheme();
 
         try {
-            addNotification("clarIP", "version: v0.66", 10, 0, 5000);
+            addNotification("clarIP", "version: v0.67", 10, 0, 5000);
         } catch (error) {
             console.warn("clarIP: notification system has not been loaded.", error);
         }
