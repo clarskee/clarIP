@@ -4,7 +4,6 @@
   "private": true,
   "description": "ome.tv userscript overlay and notification component",
   "scripts": {
-    "build": "node scriptloader.js",
     "check": "node --check scriptloader.js && node --check notif.js && node --check script.js && python3 -m py_compile python_info_server/main.py"
   }
 }
