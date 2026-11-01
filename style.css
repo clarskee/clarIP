@@ -54,10 +54,8 @@
         backdrop-filter: blur(3px);
         -webkit-backdrop-filter: blur(3px);
         border-radius: 10px;
-        padding: 10px;
+        padding: 14px 10px;
         margin: 10px;
-        padding-top: 14px;
-        padding-bottom: 14px;
         border: 1px solid rgba(255, 255, 255, 0.13);
         box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.23);
         text-shadow: 0 0 10px black;
@@ -122,12 +120,26 @@
     }
 
 
+    .notification-header{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 8px;
+        font-size: 1rem;
+    }
+
+    .notification-footer{
+        display: flex;
+        justify-content: flex-end;
+        gap: 4px;
+        margin-top: 8px;
+    }
+
     .notification-content{
         padding-left: 24px;
         overflow-wrap: break-word;
     }
     .container {
-        resize: both;
         overflow: auto;
     }
 
