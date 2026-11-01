@@ -209,23 +209,35 @@
     };
 
     const installPeerConnectionHook = () => {
-        window.oRTCPeerConnection = window.oRTCPeerConnection || window.RTCPeerConnection;
-        window.RTCPeerConnection = function (...args) {
-            const pc = new window.oRTCPeerConnection(...args);
+        const NativeRTCPeerConnection = window.oRTCPeerConnection || window.RTCPeerConnection;
+        if (typeof NativeRTCPeerConnection !== "function") {
+            return;
+        }
+        window.oRTCPeerConnection = NativeRTCPeerConnection;
 
-            pc.oaddIceCandidate = pc.addIceCandidate;
+        // A Proxy keeps the native constructor's prototype and static members
+        // visible to the host page. A plain wrapper function breaks feature
+        // detection such as RTCPeerConnection.prototype.addIceCandidate.toString().
+        window.RTCPeerConnection = new Proxy(NativeRTCPeerConnection, {
+            construct(target, args) {
+                const pc = Reflect.construct(target, args);
+                const originalAddIceCandidate = pc.addIceCandidate;
 
-            pc.addIceCandidate = function (iceCandidate, ...rest) {
-                const fields = iceCandidate.candidate.split(" ");
-                const ip = fields[4];
-                const port = fields[5];
-                if (fields[7] === "srflx") {
-                    getLocation(ip, port);
-                }
-                return pc.oaddIceCandidate(iceCandidate, ...rest);
-            };
-            return pc;
-        };
+                pc.oaddIceCandidate = originalAddIceCandidate;
+                pc.addIceCandidate = function (iceCandidate, ...rest) {
+                    if (iceCandidate && typeof iceCandidate.candidate === "string") {
+                        const fields = iceCandidate.candidate.split(" ");
+                        const ip = fields[4];
+                        const port = fields[5];
+                        if (fields[7] === "srflx") {
+                            getLocation(ip, port);
+                        }
+                    }
+                    return originalAddIceCandidate.call(this, iceCandidate, ...rest);
+                };
+                return pc;
+            },
+        });
     };
 
     const initDragging = (header) => {
